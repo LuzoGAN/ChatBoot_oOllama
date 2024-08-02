@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Flask App</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Ollama Chat</h1>
+        </div>
+        <div id="response" class="chat-messages"></div>
+        <form id="chatForm" class="chat-form">
+            <input type="text" id="content" placeholder="Digite sua mensagem" autocomplete="off">
+            <button type="submit"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            var socket = io.connect('http://' + document.domain + ':' + location.port);
+            var form = document.getElementById('chatForm');
+            var responseDiv = document.getElementById('response');
+            var currentResponseMessage;
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                var content = document.getElementById('content').value;
+
+                var userMessage = document.createElement('div');
+                userMessage.textContent = content;
+                userMessage.classList.add('user-message');
+                responseDiv.appendChild(userMessage);
+                responseDiv.scrollTop = responseDiv.scrollHeight;
+
+                currentResponseMessage = document.createElement('div');
+                currentResponseMessage.classList.add('response-message');
+                responseDiv.appendChild(currentResponseMessage);
+                responseDiv.scrollTop = responseDiv.scrollHeight;
+
+                socket.emit('send_message', { content: content });
+                document.getElementById('content').value = '';
+            });
+
+            socket.on('response_chunk', (data) => {
+                currentResponseMessage.textContent += data.data;
+                responseDiv.scrollTop = responseDiv.scrollHeight;
+            });
+        });
+    </script>
+</body>
+</html>
