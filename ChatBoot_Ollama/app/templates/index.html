@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e0f2f1; /* Verde claro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        .chat-header {
+            background-color: #009688; /* Verde escuro */
+            color: #ffffff;
+            padding: 10px;
+            text-align: center;
+        }
+        .chat-messages {
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ccc;
+        }
+        .chat-form {
+            display: flex;
+            border-top: 1px solid #ccc;
+        }
+        .chat-form input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            outline: none;
+        }
+        .chat-form button {
+            background-color: #00796b; /* Azul escuro */
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .chat-form button:hover {
+            background-color: #004d40;
+        }
+        .user-message {
+            text-align: right;
+            color: #009688; /* Verde escuro */
+        }
+        .response-message {
+            text-align: left;
+            color: #000000;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Chat</h1>
+        </div>
+        <div id="response" class="chat-messages"></div>
+        <form id="chatForm" class="chat-form">
+            <input type="text" id="content" placeholder="Digite sua mensagem" autocomplete="on">
+            <button type="submit"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            var userId = "{{ user_id }}";
+            var socket = io.connect('/chat');
+
+            socket.emit('join', {user_id: userId});
+
+            var form = document.getElementById('chatForm');
+            var responseDiv = document.getElementById('response');
+            var currentResponseMessage;
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                var content = document.getElementById('content').value;
+
+                // Adicionar a mensagem do usuário ao chat
+                var userMessage = document.createElement('div');
+                userMessage.textContent = content;
+                userMessage.classList.add('user-message');
+                responseDiv.appendChild(userMessage);
+                responseDiv.scrollTop = responseDiv.scrollHeight; // Rolagem automática para a última mensagem
+
+                // Criar um novo elemento para a resposta
+                currentResponseMessage = document.createElement('div');
+                currentResponseMessage.classList.add('response-message');
+                responseDiv.appendChild(currentResponseMessage);
+                responseDiv.scrollTop = responseDiv.scrollHeight; // Rolagem automática para a última mensagem
+
+                socket.emit('send_message', { content: content, user_id: userId });
+                document.getElementById('content').value = ''; // Limpar campo de entrada
+            });
+
+            socket.on('response_chunk', (data) => {
+                // Atualizar o conteúdo do elemento de resposta atual
+                currentResponseMessage.textContent += data.data;
+                responseDiv.scrollTop = responseDiv.scrollHeight; // Rolagem automática para a última mensagem
+            });
+        });
+    </script>
+</body>
+</html>
